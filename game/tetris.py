@@ -19,6 +19,7 @@ blue = (0,0,255)
 orange = (255,255,0)
 cyan = (0,255,255)
 yellow = (255,255,0)
+purple = (128,0,128)
 
 
 BlockLocation = [[ 0 for y in range(cols)] for x in range(rows)]
@@ -124,6 +125,16 @@ class LeftBlock(Tetromino):
         coordinates = (4,4,5,6,3,2,2,2)
         Tetromino.__init__(self,orange,coordinates)
 
+class TBlock(Tetromino):
+    def __init__(self):
+        coordinates = (4,5,5,6,2,2,3,2)
+        Tetromino.__init__(self,purple,coordinates)
+
+class RightBlock(Tetromino):
+    def __init__(self):
+        coordinates = (4,5,6,6,2,2,2,3)
+        Tetromino.__init__(self,blue,coordinates)
+
 
 def is_empty(x,y):
     if(BlockLocation[x][y] == 0):
@@ -142,7 +153,7 @@ while 1:
 
     if(len(active_blocks) == 0):
         print(rand.randrange(7))
-        active_blocks.append(LineBlock())
+        active_blocks.append(RightBlock())
 
     if(timer_counter == 10):
         for i in active_blocks:
