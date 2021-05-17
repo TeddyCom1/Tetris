@@ -21,7 +21,7 @@ cyan = (0,255,255)
 yellow = (255,255,0)
 
 
-BlockLocation = [[ 0 for y in range(rows)] for x in range(cols)]
+BlockLocation = [[ 0 for y in range(cols)] for x in range(rows)]
 
 is_block_active = True
 
@@ -68,6 +68,12 @@ class Block(pygame.sprite.Sprite):
 
     def getBlockLocation(self):
         return (self.x, self.y)
+    
+    def intersects(self,x,y):
+        if(self.x == x and self.y == y):
+            return True
+        else:
+            return False
 
 class Tetromino():
     def __init__(self,colour,coordinates):
@@ -77,21 +83,30 @@ class Tetromino():
         self.block3 = Block(colour,x3,y3)
         self.block4 = Block(colour,x4,y4)
 
-    def moveDown(self):
+    def intersects(self):
         x1,y1 = self.block1.getBlockLocation()
         x2,y2 = self.block2.getBlockLocation()
         x3,y3 = self.block3.getBlockLocation()
         x4,y4 = self.block4.getBlockLocation()
-        print(y1,y2,y3,y4)
-        if(y1 >= cols or y2 >= cols or y3 >= cols or y4 >= cols):
+        if(y1 >= cols-1 or y2 >= cols-1 or y3 >= cols-1 or y4 >= cols-1):
+            return True
+        for i in static_blocks:
+            if(i.intersects(x1,y1+1) or i.intersects(x2,y2+1) or i.intersects(x3,y3+1) or i.intersects(x4,y4+1)):
+                return True
+        return False
+
+    def moveDown(self):
+        if(self.intersects()):
             active_blocks.remove(self)
+            static_blocks.append(self.block1)
+            static_blocks.append(self.block2)
+            static_blocks.append(self.block3)
+            static_blocks.append(self.block4)
         else:
             self.block1.moveDown()
             self.block2.moveDown()
             self.block3.moveDown()
             self.block4.moveDown()
-
-            
 
     def moveLeft(self):
         print("Not implemented yet")
