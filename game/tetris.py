@@ -1,5 +1,4 @@
 import sys, pygame
-from typing import Match
 import random as rand
 
 pygame.init()
