@@ -24,7 +24,7 @@ green = (72,251,0)
 red = (255,0,0)
 
 
-BlockLocation = [[ 0 for y in range(cols)] for x in range(rows)]
+BlockLocation = [[ 0 for y in range(rows)] for x in range(cols)]
 
 is_block_active = True
 
@@ -49,25 +49,25 @@ class Block(pygame.sprite.Sprite):
 
         allsprites.add(self)
 
-        BlockLocation[self.x][self.y] = 1
+        BlockLocation[self.y][self.x] = 1
 
     def moveDown(self):
-        BlockLocation[self.x][self.y] = 0
+        BlockLocation[self.y][self.x] = 0
         self.rect.y += 1*block_size
         self.y += 1
-        BlockLocation[self.x][self.y] = 1
+        BlockLocation[self.y][self.x] = 1
 
     def moveLeft(self):
-        BlockLocation[self.x][self.y] = 0
+        BlockLocation[self.y][self.x] = 0
         self.rect.x -= 1*block_size
         self.x -= 1
-        BlockLocation[self.x][self.y] = 1
+        BlockLocation[self.y][self.x] = 1
 
     def moveRight(self):
-        BlockLocation[self.x][self.y] = 0
+        BlockLocation[self.y][self.x] = 0
         self.rect.x += 1*block_size
         self.x += 1
-        BlockLocation[self.x][self.y] = 1
+        BlockLocation[self.y][self.x] = 1
 
     def getBlockLocation(self):
         return (self.x, self.y)
@@ -91,12 +91,12 @@ class Block(pygame.sprite.Sprite):
         return False
 
     def set_location(self,x,y):
-        BlockLocation[self.x][self.y] = 0
+        BlockLocation[self.y][self.x] = 0
         self.rect.x = x*block_size
         self.rect.y = y*block_size
         self.x = x
         self.y = y
-        BlockLocation[self.x][self.y] = 1
+        BlockLocation[self.y][self.x] = 1
 
 class Tetromino():
     def __init__(self,colour,coordinates):
@@ -215,6 +215,34 @@ def is_empty(x,y):
     else:
         return False
 
+def check_line():
+    to_remove = []
+    to_shift = []
+    print(BlockLocation)
+    for i in range(cols):
+        row_full = True
+        for j in range(rows):
+            if(BlockLocation[i][j] == 0):
+                row_full = False
+                break
+        if(row_full):
+            for j in range(rows):
+                BlockLocation[i][j] = 0
+            for k in static_blocks:
+                x,y = k.getBlockLocation()
+                if(y == i):
+                    to_remove.append(k)
+                    allsprites.remove(k)
+                elif(y < i):
+                    to_shift.append(k)
+            for l in to_remove:
+                static_blocks.remove(l)
+            for k in to_shift:
+                k.moveDown()
+            to_remove.clear()
+            to_shift.clear()
+
+
 clock = pygame.time.Clock()
 
 active_blocks.append(LeftBlock())
@@ -225,6 +253,7 @@ while 1:
     screen.fill(black)
 
     if(len(active_blocks) == 0):
+        check_line()
         rand_num = rand.randrange(7)
         if(rand_num == 0):
             active_blocks.append(LineBlock())
@@ -263,4 +292,4 @@ while 1:
     timer_counter += 1
     allsprites.draw(screen)
     pygame.display.flip()
-    
+
