@@ -3,11 +3,14 @@ import random as rand
 
 pygame.init()
 
-screen_width = 800
+screen_width = 500
 screen_height = 690
 play_width = 300
 play_height = 690
 block_size = 30
+
+location_saved_block_x = 340
+location_saved_block_y = 90
 
 rows, cols = (10, 23)
 
@@ -34,6 +37,8 @@ screen = pygame.display.set_mode([screen_width, screen_height])
 allsprites = pygame.sprite.Group()
 active_blocks = []
 static_blocks = []
+save_blocks = []
+
 
 class Block(pygame.sprite.Sprite):
     def __init__(self, colour, x, y):
@@ -49,8 +54,6 @@ class Block(pygame.sprite.Sprite):
         self.rect.y = y*block_size
 
         allsprites.add(self)
-
-        BlockLocation[self.y][self.x] = 1
 
     def moveDown(self):
         self.rect.y += 1*block_size
@@ -96,6 +99,9 @@ class Block(pygame.sprite.Sprite):
 
     def set_deactive(self):
         BlockLocation[self.y][self.x] = 0
+    
+    def remove_self(self):
+        allsprites.remove(self)
 
 class Tetromino():
     def __init__(self,colour,coordinates):
@@ -146,7 +152,7 @@ class Tetromino():
             self.block2.moveDown()
             self.block3.moveDown()
             self.block4.moveDown()   
-            self.set_blocks_active()  
+            self.set_blocks_active()
 
     def moveLeft(self):
         if(not self.intersects(-1,0)):
@@ -165,6 +171,20 @@ class Tetromino():
             self.block3.moveRight()
             self.block4.moveRight()
             self.set_blocks_active()
+    
+    def dropDown(self):
+        while(not self.intersects(0,1)):
+            self.set_blocks_deactive()
+            self.block1.moveDown()
+            self.block2.moveDown()
+            self.block3.moveDown()
+            self.block4.moveDown()   
+            self.set_blocks_active()
+        active_blocks.remove(self)
+        static_blocks.append(self.block1)
+        static_blocks.append(self.block2)
+        static_blocks.append(self.block3)
+        static_blocks.append(self.block4)
 
     def rotate_clockwise(self):
         x1,y1 = self.block1.getBlockLocation()
@@ -192,42 +212,48 @@ class Tetromino():
             self.block4.set_location(x3+y4_rel,y3-x4_rel)
             self.set_blocks_active()
 
+    def remove_blocks(self):
+        self.block1.remove_self()
+        self.block2.remove_self()
+        self.block3.remove_self()
+        self.block4.remove_self()
+
 
 
 
 class LineBlock(Tetromino):
-    def __init__(self):
-        coordinates = (4,2,5,2,6,2,7,2)
+    def __init__(self,x,y):
+        coordinates = (x,y,x+1,y,x+2,y,x+3,y)
         Tetromino.__init__(self,cyan,coordinates)
 
 class LeftBlock(Tetromino):
-    def __init__(self):
-        coordinates = (4,3,5,2,4,2,6,2)
+    def __init__(self,x,y):
+        coordinates = (x,y+1,x+1,y,x,y,x+2,y)
         Tetromino.__init__(self,orange,coordinates)
 
 class TBlock(Tetromino):
-    def __init__(self):
-        coordinates = (4,2,5,3,5,2,6,2)
+    def __init__(self,x,y):
+        coordinates = (x,y,x+1,y+1,x+1,y,x+2,y)
         Tetromino.__init__(self,purple,coordinates)
 
 class RightBlock(Tetromino):
-    def __init__(self):
-        coordinates = (4,2,6,2,5,2,6,3)
+    def __init__(self,x,y):
+        coordinates = (x,y,x+2,y,x+1,y,x+2,y+1)
         Tetromino.__init__(self,blue,coordinates)
 
 class SBlock(Tetromino):
-    def __init__(self):
-        coordinates = (4,3,5,2,5,3,6,2)
+    def __init__(self,x,y):
+        coordinates = (x,y+1,x+1,y,x+1,y+1,x+2,y)
         Tetromino.__init__(self,green, coordinates)
 
 class ZBlock(Tetromino):
-    def __init__(self):
-        coordinates = (4,2,5,3,5,2,6,3)
+    def __init__(self,x,y):
+        coordinates = (x,y,x+1,y+1,x+1,y,x+2,y+1)
         Tetromino.__init__(self,red, coordinates)
 
 class Cube(Tetromino):
-    def __init__(self):
-        coordinates = (4,2,5,2,4,3,5,3)
+    def __init__(self,x,y):
+        coordinates = (x,y,x+1,y,x,y+1,x+1,y+1)
         Tetromino.__init__(self,yellow,coordinates)
 
 def check_line():
@@ -272,11 +298,65 @@ def drawGrid():
             rect = pygame.Rect(x ,y, block_size,block_size)
             pygame.draw.rect(screen, gray, rect, 1)
 
+def save_block():
+    block_type = active_blocks[0]
+    active_blocks[0].remove_blocks()
+    active_blocks.clear()
+    if(len(save_blocks) == 1):
+        saved_block = save_blocks[0]
+        saved_block.remove_blocks()
+        if(isinstance(save_blocks[0], LineBlock)):
+           active_blocks.append(create_block(0,4,2))
+        elif(isinstance(save_blocks[0],LeftBlock)):
+            active_blocks.append(create_block(1,4,2))
+        elif(isinstance(save_blocks[0],TBlock)):
+            active_blocks.append(create_block(2,4,2))
+        elif(isinstance(save_blocks[0],RightBlock)):
+            active_blocks.append(create_block(3,4,2))
+        elif(isinstance(save_blocks[0],SBlock)):
+            active_blocks.append(create_block(4,4,2))
+        elif(isinstance(save_blocks[0],ZBlock)):
+            active_blocks.append(create_block(5,4,2))
+        elif(isinstance(save_blocks[0],Cube)):
+            active_blocks.append(create_block(6,4,2))
+        save_blocks.remove(saved_block)
+
+    if(isinstance(block_type, LineBlock)):
+        save_blocks.append(create_block(0,11,3))
+    elif(isinstance(block_type,LeftBlock)):
+        save_blocks.append(create_block(1,11,3))
+    elif(isinstance(block_type,TBlock)):
+        save_blocks.append(create_block(2,11,3))
+    elif(isinstance(block_type,RightBlock)):
+        save_blocks.append(create_block(3,11,3))
+    elif(isinstance(block_type,SBlock)):
+        save_blocks.append(create_block(4,11,3))
+    elif(isinstance(block_type,ZBlock)):
+        save_blocks.append(create_block(5,11,3))
+    elif(isinstance(block_type,Cube)):
+        save_blocks.append(create_block(6,11,3))
+
+
+def create_block(rand_num,x,y):
+    if(rand_num == 0):
+        return LineBlock(x,y)
+    elif(rand_num == 1):
+        return LeftBlock(x,y)
+    elif(rand_num == 2):
+        return TBlock(x,y)
+    elif(rand_num == 3):
+        return RightBlock(x,y)
+    elif(rand_num == 4):
+        return SBlock(x,y)
+    elif(rand_num == 5):
+        return ZBlock(x,y)
+    elif(rand_num == 6):
+        return Cube(x,y)
 
 
 clock = pygame.time.Clock()
 
-active_blocks.append(LeftBlock())
+active_blocks.append(LeftBlock(4,2))
 
 #game loop
 while 1:
@@ -287,20 +367,7 @@ while 1:
     if(len(active_blocks) == 0):
         check_line()
         rand_num = rand.randrange(7)
-        if(rand_num == 0):
-            active_blocks.append(LineBlock())
-        elif(rand_num == 1):
-            active_blocks.append(LeftBlock())
-        elif(rand_num == 2):
-            active_blocks.append(TBlock())
-        elif(rand_num == 3):
-            active_blocks.append(RightBlock())
-        elif(rand_num == 4):
-            active_blocks.append(SBlock())
-        elif(rand_num == 5):
-            active_blocks.append(ZBlock())
-        elif(rand_num == 6):
-            active_blocks.append(Cube())
+        active_blocks.append(create_block(rand_num,4,2))
 
     if(timer_counter == 10):
         for i in active_blocks:
@@ -320,6 +387,12 @@ while 1:
             if(event.key == pygame.K_UP) or (event.key == pygame.K_w):
                 for i in active_blocks:
                     i.rotate_clockwise()
+            if(event.key == pygame.K_SPACE):
+                for i in active_blocks:
+                    i.dropDown()
+            if(event.key == pygame.K_LSHIFT) or (event.key == pygame.K_RSHIFT):
+                save_block()
+
     
     timer_counter += 1
     allsprites.draw(screen)
