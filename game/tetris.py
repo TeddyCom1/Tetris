@@ -38,6 +38,7 @@ allsprites = pygame.sprite.Group()
 active_blocks = []
 static_blocks = []
 save_blocks = []
+save_used = False
 
 
 class Block(pygame.sprite.Sprite):
@@ -365,9 +366,13 @@ while 1:
     drawGrid()
 
     if(len(active_blocks) == 0):
+        if(BlockLocation[2][4] == 1):
+            sys.exit(0)
+        save_used = False
         check_line()
         rand_num = rand.randrange(7)
         active_blocks.append(create_block(rand_num,4,2))
+        active_blocks[0].set_blocks_active()
 
     if(timer_counter == 10):
         for i in active_blocks:
@@ -390,8 +395,10 @@ while 1:
             if(event.key == pygame.K_SPACE):
                 for i in active_blocks:
                     i.dropDown()
-            if(event.key == pygame.K_LSHIFT) or (event.key == pygame.K_RSHIFT):
+            if((event.key == pygame.K_LSHIFT) or (event.key == pygame.K_RSHIFT)) and not save_used:
+                save_used = True
                 save_block()
+                
 
     
     timer_counter += 1
