@@ -4,12 +4,12 @@ import random as rand
 pygame.init()
 
 screen_width = 800
-screen_height = 700
+screen_height = 690
 play_width = 300
-play_height = 600
+play_height = 690
 block_size = 30
 
-rows, cols = (10, 22)
+rows, cols = (10, 23)
 
 timer_counter = 0
 
@@ -22,6 +22,7 @@ yellow = (255,255,0)
 purple = (128,0,128)
 green = (72,251,0)
 red = (255,0,0)
+gray = (169,169,169)
 
 
 BlockLocation = [[ 0 for y in range(rows)] for x in range(cols)]
@@ -52,22 +53,16 @@ class Block(pygame.sprite.Sprite):
         BlockLocation[self.y][self.x] = 1
 
     def moveDown(self):
-        BlockLocation[self.y][self.x] = 0
         self.rect.y += 1*block_size
         self.y += 1
-        BlockLocation[self.y][self.x] = 1
 
     def moveLeft(self):
-        BlockLocation[self.y][self.x] = 0
         self.rect.x -= 1*block_size
         self.x -= 1
-        BlockLocation[self.y][self.x] = 1
 
     def moveRight(self):
-        BlockLocation[self.y][self.x] = 0
         self.rect.x += 1*block_size
         self.x += 1
-        BlockLocation[self.y][self.x] = 1
 
     def getBlockLocation(self):
         return (self.x, self.y)
@@ -91,12 +86,16 @@ class Block(pygame.sprite.Sprite):
         return False
 
     def set_location(self,x,y):
-        BlockLocation[self.y][self.x] = 0
         self.rect.x = x*block_size
         self.rect.y = y*block_size
         self.x = x
         self.y = y
+
+    def set_active(self):
         BlockLocation[self.y][self.x] = 1
+
+    def set_deactive(self):
+        BlockLocation[self.y][self.x] = 0
 
 class Tetromino():
     def __init__(self,colour,coordinates):
@@ -122,6 +121,18 @@ class Tetromino():
                 return True
         return False
 
+    def set_blocks_deactive(self):
+        self.block1.set_deactive()
+        self.block2.set_deactive()
+        self.block3.set_deactive()
+        self.block4.set_deactive()
+
+    def set_blocks_active(self):
+        self.block1.set_active()
+        self.block2.set_active()
+        self.block3.set_active()
+        self.block4.set_active()
+
     def moveDown(self):
         if(self.intersects(0,1)):
             active_blocks.remove(self)
@@ -130,24 +141,30 @@ class Tetromino():
             static_blocks.append(self.block3)
             static_blocks.append(self.block4)
         else:
+            self.set_blocks_deactive()
             self.block1.moveDown()
             self.block2.moveDown()
             self.block3.moveDown()
-            self.block4.moveDown()
+            self.block4.moveDown()   
+            self.set_blocks_active()  
 
     def moveLeft(self):
         if(not self.intersects(-1,0)):
+            self.set_blocks_deactive()
             self.block1.moveLeft()
             self.block2.moveLeft()
             self.block3.moveLeft()
             self.block4.moveLeft()
+            self.set_blocks_active()
 
     def moveRight(self):
         if(not self.intersects(1,0)):
+            self.set_blocks_deactive()
             self.block1.moveRight()
             self.block2.moveRight()
             self.block3.moveRight()
             self.block4.moveRight()
+            self.set_blocks_active()
 
     def rotate_clockwise(self):
         x1,y1 = self.block1.getBlockLocation()
@@ -168,10 +185,14 @@ class Tetromino():
         y4_rel = y4-y3
 
         if(not self.block1.intersect_static(-x1+x3+y1_rel,-y1+y3-x1_rel) and not self.block2.intersect_static(-x2+x3+y2_rel,-y2+y3-x2_rel) and not self.block3.intersect_static(y3_rel,x3_rel) and not self.block4.intersect_static(-x4+x3+y4_rel,-y4+y3-x4_rel)):
+            self.set_blocks_deactive()
             self.block1.set_location(x3+y1_rel,y3-x1_rel)
             self.block2.set_location(x3+y2_rel,y3-x2_rel)
             self.block3.set_location(x3+y3_rel,y3-x3_rel)
             self.block4.set_location(x3+y4_rel,y3-x4_rel)
+            self.set_blocks_active()
+
+
 
 
 class LineBlock(Tetromino):
@@ -209,22 +230,17 @@ class Cube(Tetromino):
         coordinates = (4,2,5,2,4,3,5,3)
         Tetromino.__init__(self,yellow,coordinates)
 
-def is_empty(x,y):
-    if(BlockLocation[x][y] == 0):
-        return True
-    else:
-        return False
-
 def check_line():
     to_remove = []
     to_shift = []
-    print(BlockLocation)
-    for i in range(cols):
+    i = cols-1
+    while i > 0:
         row_full = True
         for j in range(rows):
             if(BlockLocation[i][j] == 0):
                 row_full = False
                 break
+
         if(row_full):
             for j in range(rows):
                 BlockLocation[i][j] = 0
@@ -236,11 +252,26 @@ def check_line():
                 elif(y < i):
                     to_shift.append(k)
             for l in to_remove:
+                l.set_deactive()
+            for l in to_remove:
                 static_blocks.remove(l)
             for k in to_shift:
+                k.set_deactive()
+            for k in to_shift:
                 k.moveDown()
+            for k in to_shift:
+                k.set_active()
             to_remove.clear()
             to_shift.clear()
+            i += 1
+        i -= 1
+
+def drawGrid():
+    for x in range(0, play_width, block_size):
+        for y in range(0, play_height, block_size):
+            rect = pygame.Rect(x ,y, block_size,block_size)
+            pygame.draw.rect(screen, gray, rect, 1)
+
 
 
 clock = pygame.time.Clock()
@@ -251,6 +282,7 @@ active_blocks.append(LeftBlock())
 while 1:
     clock.tick(30)
     screen.fill(black)
+    drawGrid()
 
     if(len(active_blocks) == 0):
         check_line()
