@@ -399,9 +399,6 @@ while 1:
                 save_used = True
                 save_block()
                 
-
-    
     timer_counter += 1
     allsprites.draw(screen)
     pygame.display.flip()
-
